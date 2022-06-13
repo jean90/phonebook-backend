@@ -51,8 +51,8 @@ jobs:
             
             git checkout main &&
             git fetch --all &&
-            git reset --hard origin/master &&
-            git pull origin master &&
+            git reset --hard origin/main &&
+            git pull origin main &&
             pm2 start app.js
           '
             
