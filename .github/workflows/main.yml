@@ -23,37 +23,16 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
 
-      # Runs a single command using the runners shell
-      - name: Deploy in EC2
-        env:
-            PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY  }}
-            HOSTNAME : ${{ secrets.HOSTNAME  }}
-            USER_NAME : ${{ secrets.USER  }}
-            
-        run: |
-          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          ssh -o StrictHostKeyChecking=no -i private_key ${USER_NAME}@${HOSTNAME} '
-          
-            #Now we have got the access of EC2 and we will start the deploy .
-            DIR="/home/ubuntu/server"
-            pm2 delete all
-            cd /home/ubuntu
-            
-            if [ ! -d $DIR ]
-            then
-              mkdir server &&
-              git clone https://github.com/jean90/phonebook-backend.git server &&
-              cd server &&
-              npm i
-            else
-              cd server
-            fi
-            
-            git checkout main &&
-            git fetch --all &&
-            git reset --hard origin/main &&
-            git pull origin main &&
-            pm2 start index.js
-          '
-            
+      - run: npm ci
+      - run: npm run build
+
+      - name: rsync deployments
+        uses: burnett01/rsync-deployments@5.1
+        with:
+          switches: -avzr --delete
+          path: ./*
+          remote_path: /var/www/my-app/
+          remote_host: ${{ secrets.HOSTNAME }}
+          remote_user: ${{ secrets.USER }}
+          remote_key: "${{ secrets.EC2_PRIVATE_KEY }}"          
             
